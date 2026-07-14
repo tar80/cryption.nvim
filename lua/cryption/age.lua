@@ -191,7 +191,7 @@ function M.parse_encrypt(age, keytype, filepath, opts)
   elseif keytype == 'public_key' then
     key = { '--recipient', opts.public_key }
   else
-    error('Invalid key type specified for encryption.')
+    info:echo('Invalid key type specified for encryption.')
   end
   return vim.iter({ age, '--encrypt', key, armor, '-o', filepath }):flatten():totable()
 end

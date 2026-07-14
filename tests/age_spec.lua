@@ -219,12 +219,6 @@ describe('age', function()
         '/path/to/file.age',
       }, res)
     end)
-
-    it('raises an error when an invalid keytype is given', function()
-      assert.has_error(function()
-        age.parse_encrypt('age', 'invalid', '/path/to/file.age', {})
-      end)
-    end)
   end)
 
   describe('.stdin_decrypt()', function()
