@@ -1,0 +1,118 @@
+local M = {}
+
+---@param name any
+---@param t? string
+---@return boolean
+---@return string?
+function M.is_valid_str(name, t)
+  t = t or type(name)
+  return (t == 'string' and name ~= ''), t
+end
+
+------@param name any
+------@param t? string
+------@return boolean
+------@return string?
+---function M.is_valid_table(name, t)
+---  t = t or type(name)
+---  return (t == 'table' and #name > 0), t
+---end
+---
+------@param id any
+------@param t? string
+------@return boolean
+------@return string?
+---function M.is_valid_win(id, t)
+---  t = t or type(id)
+---  return (t == 'number' and vim.api.nvim_win_is_valid(id)), t
+---end
+---
+------@return boolean
+---function M.is_windows()
+---  return jit.os == 'Windows'
+---end
+---
+------@param value any
+------@return boolean
+---function M.is_blob(value)
+---  return vim.fn.type(value) == vim.v.t_blob
+---end
+---
+------Check if current mode is Operator-pending
+------@param mode? string
+------@return boolean
+---function M.is_operator(mode)
+---  mode = mode or vim.api.nvim_get_mode().mode
+---  return mode:find('^no') ~= nil
+---end
+---
+------Determine whether the specified string is in insert-mode.
+------@param mode? string
+------@return boolean
+---function M.is_insert_mode(mode)
+---  mode = mode or vim.api.nvim_get_mode().mode
+---  return mode:find('^[i|R]') ~= nil
+---end
+---
+------Determines whether the specified string indicates a blockwise.
+------@param mode? string
+------@return boolean
+---function M.is_blockwise(mode)
+---  mode = mode or vim.api.nvim_get_mode().mode
+---  return mode:find('\x16', 1, true) ~= nil
+---end
+---
+------@param winid integer
+------@return boolean
+---function M.is_floating_win(winid)
+---  return vim.api.nvim_win_get_config(winid).relative ~= ''
+---end
+---
+------Check if the buffer is a normal file
+------@param bufnr integer
+------@return boolean
+---function M.is_file_buffer(bufnr)
+---  if not vim.api.nvim_buf_is_valid(bufnr) then
+---    return false
+---  end
+---  local buftype = vim.api.nvim_get_option_value('buftype', { buf = bufnr })
+---  if buftype ~= '' then
+---    return false
+---  end
+---  local name = vim.api.nvim_buf_get_name(bufnr)
+---  if name == '' then
+---    return false
+---  end
+---  return true
+---end
+---
+------Internal truthy check for user variables
+------@param value any
+------@return boolean|nil
+---local function _is_truthy(value)
+---  if type(value) == 'boolean' then
+---    return value
+---  end
+---  if type(value) == 'number' then
+---    return value ~= 0
+---  end
+---  if type(value) == 'string' then
+---    local n = tonumber(value)
+---    return n and n ~= 0 or value ~= ''
+---  end
+---  return value
+---end
+---
+------Check boolean value of user variables (b: or g:)
+------@param name string
+------@return boolean|nil
+---function M.is_enable_user_vars(name)
+---  local b = _is_truthy(vim.b[name])
+---  local g = _is_truthy(vim.g[name])
+---  if b ~= nil then
+---    return b
+---  end
+---  return g
+---end
+
+return M
