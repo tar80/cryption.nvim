@@ -50,6 +50,24 @@ jobs:
         run: |
           git clone --depth 1 https://github.com/nvim-lua/plenary.nvim /tmp/plenary.nvim
 
+      - name: Install age components from official release
+        run: |
+          LATEST_AGE=$(curl -s https://api.github.com/repos/filosottile/age/releases/latest | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/')
+          curl -sL "https://github.com/filosottile/age/releases/download/${LATEST_AGE}/age-${LATEST_AGE}-linux-amd64.tar.gz" | tar xz --strip-components=1
+
+      - name: Install Latest sops
+        run: |
+          LATEST_SOPS=$(curl -s https://api.github.com/repos/getsops/sops/releases/latest | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/')
+
+          curl -LO "https://github.com/getsops/sops/releases/download/${LATEST_SOPS}/sops-${LATEST_SOPS}.linux.amd64"
+
+          mv sops-${LATEST_SOPS}.linux.amd64 sops
+
+      - name: Add Workspace to Path
+        run: |
+          chmod +x age age-keygen age-inspect sops
+          echo "$GITHUB_WORKSPACE" >> $GITHUB_PATH
+
       - name: Run Tests
         env:
           STYLUA_PATH: stylua
@@ -67,10 +85,9 @@ jobs:
         run: |
           curl -sL https://github.com/numToStr/lemmy-help/releases/latest/download/lemmy-help-x86_64-unknown-linux-gnu.tar.gz | tar xz
           chmod +x lemmy-help
-          sudo mv lemmy-help /usr/local/bin/
       - name: Check vimdoc
         run: |
-          make doc
+          LEMMY_HELP=./lemmy-help make doc
           git diff --exit-code doc/
 
   deploy:
