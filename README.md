@@ -67,7 +67,7 @@ Encrypt the current buffer using age.
 
 | Field        | Type      | Description                                 |
 | ------------ | --------- | ------------------------------------------- |
-| `passphrase` | `boolean` | Encrypt with a passphrase.                  |
+| `passphrase` | `boolean` | Encrypt with a passphrase (interactive).    |
 | `key_file`   | `string`  | Path to a recipients file or identity file. |
 | `public_key` | `string`  | Recipient public key string.                |
 | `armor`      | `boolean` | Output ASCII-armored encryption.            |
@@ -86,13 +86,13 @@ Decrypt an age-encrypted file into a scratch buffer. When the scratch buffer is 
 
 **AgeDecryptOptions**
 
-| Field         | Type               | Description                                                               |
-| ------------- | ------------------ | ------------------------------------------------------------------------- |
-| `filetype`    | `string`           | Override the detected filetype of the decrypted buffer.                   |
-| `get_key_cmd` | `string\|string[]` | Command to retrieve the secret key. A string is used directly as the key. |
-| `key_file`    | `string`           | Path to an identity file for decryption.                                  |
-| `public_key`  | `string`           | Explicit public key to use for re-encryption.                             |
-| `armor`       | `boolean`          | Use ASCII-armored format when re-encrypting.                              |
+| Field         | Type               | Description                                                                                                                                                      |
+| ------------- | ------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `filetype`    | `string`           | Override the detected filetype of the decrypted buffer.                                                                                                          |
+| `get_key_cmd` | `string\|string[]` | Command to retrieve the secret key. A string is used directly as the age secret key. A table is executed as a command with the master password passed via stdin. |
+| `key_file`    | `string`           | Path to an identity file for decryption. Used as-is for re-encryption, preserving all original recipients.                                                       |
+| `public_key`  | `string`           | Explicit public key to use for re-encryption. Takes priority over key extraction.                                                                                |
+| `armor`       | `boolean`          | Use ASCII-armored format when re-encrypting on save.                                                                                                             |
 
 ---
 
@@ -112,7 +112,7 @@ Encrypt the current buffer using SOPS.
 | Field         | Type                     | Description                                                                 |
 | ------------- | ------------------------ | --------------------------------------------------------------------------- |
 | `input_type`  | `string`                 | Format of the unencrypted buffer (e.g. `'yaml'`, `'json'`).                 |
-| `output_type` | `string`                 | Target encrypted file format.                                               |
+| `output_type` | `string`                 | Target encrypted file format (e.g. `'yaml'`, `'json'`).                     |
 | `public_key`  | `string[]`               | Key pair for encryption, e.g. `{'age', 'age1...'}` or `{'pgp', 'FBC7...'}`. |
 | `range`       | `{s:integer, e:integer}` | Line range for partial encryption.                                          |
 
@@ -141,21 +141,22 @@ Decrypt a SOPS-encrypted file into a scratch buffer. When the scratch buffer is 
 #### `require('cryption').sops_extract(filepath, key_spec, opts)`
 
 Synchronously retrieve a specific value from a SOPS-encrypted file.
+Requires `SOPS_AGE_KEY_FILE` to be set in the environment, or pass credentials explicitly via `opts.env`.
 
-| Parameter  | Type                | Description                                           |
-| ---------- | ------------------- | ----------------------------------------------------- |
-| `filepath` | `string`            | Target encrypted file path.                           |
-| `key_spec` | `string[]`          | Key path components, e.g. `{'database', 'password'}`. |
-| `opts`     | `SopsGetKeyOptions` | Retrieval options (see below).                        |
+| Parameter  | Type                | Description                                                  |
+| ---------- | ------------------- | ------------------------------------------------------------ |
+| `filepath` | `string`            | Target encrypted file path.                                  |
+| `key_spec` | `string[]`          | Key path components, e.g. `{'path/to/secrets', 'key_name'}`. |
+| `opts`     | `SopsGetKeyOptions` | Retrieval options (see below).                               |
 
 **Returns:** `string|nil` — The decrypted value, or `nil` if failed.
 
 **SopsGetKeyOptions**
 
-| Field        | Type                   | Description                                              |
-| ------------ | ---------------------- | -------------------------------------------------------- |
-| `input_type` | `string`               | Source file format.                                      |
-| `env`        | `table<string,string>` | Custom environment variables (e.g. AWS/GCP credentials). |
+| Field        | Type                   | Description                                        |
+| ------------ | ---------------------- | -------------------------------------------------- |
+| `input_type` | `string`               | Source file format to guide the decryption parser. |
+| `env`        | `table<string,string>` | Custom environment variables injection.            |
 
 ---
 
@@ -168,4 +169,4 @@ Decrypt a SOPS dotenv-style file and inject the values as environment variables 
 | `filepath` | `string`         | Path to the SOPS-encrypted dotenv file.               |
 | `opts`     | `vim.SystemOpts` | Options passed to the underlying process.             |
 | `term_fn`  | `fun(...)`       | Function to call with environment variables injected. |
-| `fn_args`  | `any[]`          | Arguments to pass to `term_fn`.                       |
+| `fn_args`  | `any[]`          | Arguments unpacked and passed to `term_fn`.           |

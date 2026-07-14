@@ -203,10 +203,17 @@ SopsGetKeyOptions                                            *SopsGetKeyOptions*
         {env?}         (table<string,string>) Custom environment variables injection.
 
 
-cryption.sops_exec_env_wrap({fn_args})             *cryption.sops_exec_env_wrap*
+                                                   *cryption.sops_exec_env_wrap*
+cryption.sops_exec_env_wrap({filepath}, {opts}, {term_fn}, {fn_args})
+    Decrypt a SOPS dotenv-style file and inject values as environment variables,
+    then call `term_fn` with `fn_args`. Environment variables are restored after
+    `term_fn` returns. `term_fn` must complete synchronously.
 
     Parameters: ~
-        {fn_args}  (any[]) Arguments unpacked and passed to `term_fn`.
+        {filepath}  (string) Path to the SOPS-encrypted dotenv file.
+        {opts}      (vim.SystemOpts) Options passed to the underlying process.
+        {term_fn}   (function) Function to call with environment variables injected.
+        {fn_args}   (any[]) Arguments unpacked and passed to `term_fn`.
 
     Usage: ~
 >lua

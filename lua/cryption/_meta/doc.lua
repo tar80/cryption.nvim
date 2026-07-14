@@ -174,7 +174,7 @@ function cryption.sops_extract(filepath, key_spec, opts) end
 ---`term_fn` returns. `term_fn` must complete synchronously.
 ---@param filepath string Path to the SOPS-encrypted dotenv file.
 ---@param opts vim.SystemOpts Options passed to the underlying process.
----@param term_fn fun(...) Function to call with environment variables injected.
+---@param term_fn function Function to call with environment variables injected.
 ---@param fn_args any[] Arguments unpacked and passed to `term_fn`.
 ---@usage [[
 --->
