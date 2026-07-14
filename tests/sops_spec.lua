@@ -286,6 +286,7 @@ describe('sops', function()
   describe('.decrypt_buffer()', function()
     local process_mod = require('cryption.lib.process')
     local util_mod = require('cryption.util')
+    local info_mod = require('cryption.info')
 
     local original_override
     local original_get_bufinfo
@@ -293,6 +294,7 @@ describe('sops', function()
     local original_renew_buffer
     local original_lifecycle
     local original_buffer_cmd
+    local original_echo
 
     before_each(function()
       original_override = process_mod.override
@@ -301,6 +303,7 @@ describe('sops', function()
       original_renew_buffer = util_mod.renew_buffer
       original_lifecycle = util_mod.lifecycle
       original_buffer_cmd = vim.cmd.buffer
+      original_echo = info_mod.echo
     end)
 
     after_each(function()
@@ -309,6 +312,7 @@ describe('sops', function()
       rawset(util_mod, 'create_scratch_contents', original_create_scratch)
       rawset(util_mod, 'renew_buffer', original_renew_buffer)
       rawset(util_mod, 'lifecycle', original_lifecycle)
+      rawset(info_mod, 'echo', original_echo)
       vim.cmd.buffer = original_buffer_cmd
     end)
 
@@ -316,6 +320,10 @@ describe('sops', function()
       rawset(util_mod, 'get_bufinfo', function(bufname, filetype)
         return { bufnr = 12, filepath = '/path/to/secret.yaml', filetype = filetype or 'yaml' }
       end)
+      rawset(info_mod, 'echo', function(_, msg, _)
+        assert.are.equal('Public-key not found.', msg)
+      end)
+
 
       local scratch_bufnr = 99
       local create_scratch_called = false
@@ -371,8 +379,6 @@ describe('sops', function()
     end)
 
     it('if a non-table value is passed to key_spec, report an error and return nil', function()
-      local info_mod = require('cryption.info')
-      local original_echo = info_mod.echo
       local echoed_msg = nil
       local echoed_level = nil
       rawset(info_mod, 'echo', function(_, msg, level)

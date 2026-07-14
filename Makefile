@@ -16,6 +16,7 @@ all:
 	@status=0; \
 	$(MAKE) lint || status=1; \
 	$(MAKE) test || status=1; \
+	$(MAKE) doc || status=1; \
 	exit $$status
 
 lint:
