@@ -1,0 +1,232 @@
+*cryption.txt*                             Encrypt and decrypt buffers in Neovim
+
+Author: tar80 (https://github.com/tar80)
+License: Apache License
+Repository: https://github.com/tar80/cryption.nvim
+
+==============================================================================
+Table of Contents                                            *cryption-contents*
+
+INTRODUCTION ··········································· |cryption-introduction|
+SETUP ························································· |cryption-setup|
+FUNCTIONS ·················································· |cryption-function|
+
+==============================================================================
+INTRODUCTION                                             *cryption-introduction*
+
+*cryption.nvim* encrypts and decrypts buffers using age and SOPS.
+Decrypted content is opened in a scratch buffer. On save, the source
+file is automatically re-encrypted and overwritten.
+
+==============================================================================
+SETUP                                                           *cryption-setup*
+
+cryption.setup({user_config?})                                  *cryption.setup*
+    Configures the cryption.nvim plugin with user-defined settings.
+
+    Parameters: ~
+        {user_config?}  ({age?:AgeConfig,sops?:SopsConfig})
+
+
+AgeConfig                                                            *AgeConfig*
+
+    Fields: ~
+        {enable}   (boolean) Default: false
+                   Whether the Age encryption module is enabled.
+        {age}      (string) Default: "age"
+                   Resolved executable path for age.
+        {keygen}   (string) Default: "age-keygen"
+                   Resolved executable path for age-keygen.
+        {inspect}  (string) Default: "age-inspect"
+                   Resolved executable path for age-inspect.
+
+
+SopsConfig                                                          *SopsConfig*
+
+    Fields: ~
+        {enable}                       (boolean) Default: false
+                                       Whether the SOPS encryption module is enabled.
+        {sops}                         (string) Default: "sops"
+                                       Resolved executable path or command for sops.
+        {encrypt_default_output_type}  (string) Default: "yaml"
+                                       Default output format when encrypting new files.
+
+
+==============================================================================
+FUNCTIONS                                                    *cryption-function*
+
+                                                          *cryption.age_encrypt*
+cryption.age_encrypt({filepath?}, {opts?})
+    Encrypt the current buffer using the age backend and write to `filepath`.
+    If `filepath` is `nil`, prompts to overwrite the current buffer.
+
+    Parameters: ~
+        {filepath?}  (string) Target file path to encrypt.
+        {opts?}      (AgeEncryptOptions)
+
+
+AgeEncryptOptions                                            *AgeEncryptOptions*
+
+    Fields: ~
+        {armor?}       (boolean) Output ASCII-armored encryption.
+        {passphrase?}  (boolean) Encrypt with a passphrase (interactive).
+        {key_file?}    (string) Path to a recipients file or identity file.
+        {public_key?}  (string) Recipient public key string.
+
+
+                                                          *cryption.age_decrypt*
+cryption.age_decrypt({filepath?}, {close_source}, {opts})
+    Decrypt an age-encrypted file into a scratch buffer.
+    On save, the source file is re-encrypted and overwritten.
+
+    Parameters: ~
+        {filepath?}     (string) Target buffer name or path. Uses current buffer if `nil`.
+        {close_source}  (boolean) Whether to close the source buffer after decryption.
+        {opts}          (AgeDecryptOptions)
+
+    Usage: ~
+>lua
+        >
+        local cryption = require('cryption')
+
+        ## Direct secret key
+        # get_key_cmd as string: used directly as the age secret key.
+        cryption.age_decrypt('secrets.yaml.age', true, {
+          get_key_cmd = 'AGE-SECRET-KEY-1QQQQQQ...',
+        })
+
+        ## KeePassXC
+        # get_key_cmd as table: executed as a command.
+        # The user is prompted for a master password via inputsecret,
+        # which is passed to the command via stdin.
+        # The command's stdout is used as the age secret key.
+        cryption.age_decrypt('secrets.yaml.age', true, {
+          get_key_cmd = {
+            'keepassxc-cli', 'show',
+            '-q',
+            '-k', '/path/to/key.file',
+            '/path/to/database.kdbx',
+            'Age',
+            '-a', 'Password',
+          },
+        })
+
+        ## Bitwarden
+        # Ensure BW_SESSION is set before calling: bw unlock
+        cryption.age_decrypt('secrets.yaml.age', true, {
+          get_key_cmd = {
+            'bw', 'get', 'password', 'age-secret-key',
+          },
+        })
+<
+
+
+AgeDecryptOptions                                            *AgeDecryptOptions*
+
+    Fields: ~
+        {filetype?}     (string) Override the detected filetype of the decrypted buffer.
+        {get_key_cmd?}  (string|string[]) A string is used directly as the age secret key.
+                        A table is executed as a command via stdin.
+        {armor?}        (boolean) Use ASCII-armored format when re-encrypting on save.
+        {key_file?}     (string) Path to an identity file for decryption. Used as-is for re-encryption, preserving all original recipients.
+        {public_key?}   (string) Explicit public key to use for re-encryption.
+
+
+------------------------------------------------------------------------------
+
+                                                         *cryption.sops_encrypt*
+cryption.sops_encrypt({filepath?}, {opts?})
+    Encrypt the current buffer using the SOPS backend and write to `filepath`.
+    If `filepath` is `nil`, prompts to overwrite the current buffer.
+
+    Parameters: ~
+        {filepath?}  (string) Target file path to encrypt.
+        {opts?}      (SopsEncryptOptions)
+
+
+SopsEncryptOptions                                          *SopsEncryptOptions*
+
+    Fields: ~
+        {input_type?}   (string) Format of the current unencrypted buffer (e.g., `'yaml'`, `'json'`).
+        {output_type?}  (string) Target encrypted file format (e.g., `'yaml'`, `'json'`).
+        {public_key?}   (string[]) Targeted encryption key as a pair. e.g. `{'age', 'age1...'}` or `{'pgp', 'FBC7...'}`.
+        {range?}        ({s:integer,e:integer}) Specific line range for selective/partial encryption.
+
+
+                                                         *cryption.sops_decrypt*
+cryption.sops_decrypt({filepath?}, {close_source}, {opts})
+    Decrypt a SOPS-encrypted file into a scratch buffer.
+    On save, the source file is re-encrypted and overwritten.
+
+    Parameters: ~
+        {filepath?}     (string) Target buffer name or path. Uses current buffer if `nil`.
+        {close_source}  (boolean) Whether to close the source buffer after decryption.
+        {opts}          (SopsDecryptOptions)
+
+
+SopsDecryptOptions                                          *SopsDecryptOptions*
+
+    Fields: ~
+        {public_key?}  (string[]) Explicit public key override pair for the decryption process.
+        {input_type?}  (string) Source file format to guide the decryption parser.
+        {env?}         (table<string,string>) Custom environment variables injection.
+
+
+                                                         *cryption.sops_extract*
+cryption.sops_extract({filepath}, {key_spec}, {opts?})
+    Synchronously retrieve a specific value from a SOPS-encrypted file.
+    Requires `SOPS_AGE_KEY_FILE` to be set in the environment, or pass credentials explicitly via `opts.env` (e.g., `{ SOPS_AGE_KEY_FILE = '/path/to/key.txt' }`).
+
+    Parameters: ~
+        {filepath}  (string) Target encrypted file path.
+        {key_spec}  (string[]) Key path components (e.g., `{"path/to/secrets", "key_name"}`).
+        {opts?}     (SopsGetKeyOptions) Retrieval options.
+
+    Returns: ~
+        (string|nil)  The decrypted value, or `nil` if failed.
+
+    Usage: ~
+>lua
+        >
+        local cryption = require('cryption')
+        local value = cryption.sops_extract('secrets.yaml', { 'path/to/secrets', 'SOME_API_KEY' })
+        if value then
+          print(value)
+        end
+<
+
+
+SopsGetKeyOptions                                            *SopsGetKeyOptions*
+
+    Fields: ~
+        {input_type?}  (string) Source file format to guide the decryption parser.
+        {env?}         (table<string,string>) Custom environment variables injection.
+
+
+cryption.sops_exec_env_wrap({fn_args})             *cryption.sops_exec_env_wrap*
+
+    Parameters: ~
+        {fn_args}  (any[]) Arguments unpacked and passed to `term_fn`.
+
+    Usage: ~
+>lua
+        >
+        local cryption = require('cryption')
+
+        local function open_terminal(cmd)
+          vim.cmd.new()
+          vim.fn.jobstart(cmd, { term = true })
+        end
+
+        cryption.sops_exec_env_wrap(
+          '.env.sops',
+          {},
+          open_terminal,
+          { 'bash' }
+        )
+<
+
+
+------------------------------------------------------------------------------
+
+vim:tw=78:ts=8:noet:ft=help:norl:
