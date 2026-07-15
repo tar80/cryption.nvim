@@ -16,10 +16,9 @@
 ---file is automatically re-encrypted and overwritten.
 ---@brief ]]
 
+---@mod cryption-setup SETUP
 ---@class cryption
 local cryption = {}
-
----@mod cryption-setup SETUP
 
 ---Configures the cryption.nvim plugin with user-defined settings.
 ---@param user_config? {age?:AgeConfig, sops?:SopsConfig}
@@ -43,7 +42,7 @@ function cryption.setup(user_config) end
 ---Default output format when encrypting new files.
 ---@field encrypt_default_output_type string Default: "yaml"
 
----@mod cryption-function FUNCTIONS
+---@mod cryption-functions FUNCTIONS
 
 ---Encrypt the current buffer using the age backend and write to `filepath`.
 ---If `filepath` is `nil`, prompts to overwrite the current buffer.

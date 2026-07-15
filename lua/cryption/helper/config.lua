@@ -1,24 +1,3 @@
----A configuration instance returned by |M.config_instance()|.
----@class ConfigInstance
----@field setup fun(user_spec: {age?:AgeConfig, sops?:SopsConfig}) Validates and stores user configuration. Call this from the plugin's `setup()`.
----@field get fun(mod_name: string, mod_config?: table): GetMethods Resolves and returns a validated configuration instance for the given module.
----@field get_invalid_keys fun(): string[]|nil Returns unknown keys detected during `setup()`, or nil if none.
-
----Methods available on every instance returned by |ConfigInstance.get|.
----@class GetMethods
----Returns a direct reference to the active config
----table for `mod_name`. Because this is a live reference, values added by
----later `get()` calls are immediately visible through any existing instance.
----@field ref fun(self: table, mod_name: string): table|nil
----Restores the instance's values to the master
----config state, removing any keys added at runtime.
----@field reset fun(self: table, mod_name: string)
----When a key has `vim_var` declared in |ConfigSpec|,
----calling the instance as a function gives the corresponding Vim variable
----(`vim.g.*` or `vim.b.*`) priority over the in-memory value. Falls back
----to the in-memory value if the Vim variable is not set.
----@field __call fun(key)
-
 ---@class ConfigSpec
 ---@field type string|string[] Expected type(s) passed to `vim.validate()`.
 ---@field default any Fallback value when the user omits the key or provides an invalid value.
@@ -295,9 +274,9 @@ function M.config_instance(info, schema, schema_exec)
 
   ---@type ConfigInstance
   local instance = {
-    setup = function(user_spec)
+    setup = function(user_config)
       _invalid_keys = nil
-      _config.user, _invalid_keys = M.validate_options(schema, user_spec or {})
+      _config.user, _invalid_keys = M.validate_options(schema, user_config or {})
       if _invalid_keys and #_invalid_keys > 0 then
         vim.schedule(function()
           local msg = ('Unknown key detected in %s.nvim Run :checkhealth %s'):format(info.name, info.name)

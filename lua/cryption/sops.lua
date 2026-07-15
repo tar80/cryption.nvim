@@ -121,8 +121,8 @@ function M.create_extract_value(key_spec)
 end
 
 function M.setup()
-  ---@type SopsSchema
   local conf = require('cryption.config').get('sops')
+  ---@cast conf SopsSchema
 
   ---@param filepath? string
   ---@param opts? SopsEncryptOptions
