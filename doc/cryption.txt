@@ -9,7 +9,7 @@ Table of Contents                                            *cryption-contents*
 
 INTRODUCTION ··········································· |cryption-introduction|
 SETUP ························································· |cryption-setup|
-FUNCTIONS ·················································· |cryption-function|
+FUNCTIONS ················································· |cryption-functions|
 
 ==============================================================================
 INTRODUCTION                                             *cryption-introduction*
@@ -18,11 +18,11 @@ INTRODUCTION                                             *cryption-introduction*
 Decrypted content is opened in a scratch buffer. On save, the source
 file is automatically re-encrypted and overwritten.
 
-cryption                                                              *cryption*
-
-
 ==============================================================================
 SETUP                                                           *cryption-setup*
+
+cryption                                                              *cryption*
+
 
 cryption.setup({user_config?})                                  *cryption.setup*
     Configures the cryption.nvim plugin with user-defined settings.
@@ -56,7 +56,7 @@ SopsConfig                                                          *SopsConfig*
 
 
 ==============================================================================
-FUNCTIONS                                                    *cryption-function*
+FUNCTIONS                                                   *cryption-functions*
 
                                                           *cryption.age_encrypt*
 cryption.age_encrypt({filepath?}, {opts?})
