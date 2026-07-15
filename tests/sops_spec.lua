@@ -324,7 +324,6 @@ describe('sops', function()
         assert.are.equal('Public-key not found.', msg)
       end)
 
-
       local scratch_bufnr = 99
       local create_scratch_called = false
       rawset(util_mod, 'create_scratch_contents', function(uri, filepath, filetype, contents)

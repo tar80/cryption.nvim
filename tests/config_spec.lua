@@ -1,4 +1,3 @@
----@diagnostic disable: param-type-mismatch, duplicate-set-field
 local assert = require('luassert')
 local helper_config = require('cryption.helper.config')
 local config = require('cryption.config')
@@ -11,13 +10,15 @@ describe('config', function()
     local org_echo = info.echo
 
     before_each(function()
+      ---@diagnostic disable-next-line: duplicate-set-field
       helper_config.resolve_config = function(_, _, _, user_spec, _)
         return user_spec or {}
       end
 
+      ---@diagnostic disable-next-line: duplicate-set-field
       helper_config.detect_exe_path = function(executables)
         local existence = {}
-        for k, v in pairs(executables) do
+        for k, _ in pairs(executables) do
           existence[k] = '/mock/bin/' .. k
         end
         return existence, {}
@@ -59,19 +60,19 @@ describe('config', function()
 
     describe(':reset()', function()
       it('restores instance values back to the master config state', function()
-        local instance = config.get('age', { age = { get_key_timeout = 5000 } })
+        local active = config.get('age', { age = { get_key_timeout = 5000 } })
 
-        instance.get_key_timeout = 0
-        instance.new_dirty_key = 'garbage'
+        active.get_key_timeout = 0
+        active.new_dirty_key = 'garbage'
 
-        local master = instance:ref('age')
-        assert.are.equal(5000, master.get_key_timeout)
-        assert.is_nil(master.new_dirty_key)
+        local refs = active:ref('age')
+        assert.are.equal(0, refs.get_key_timeout)
+        assert.are.equal('garbage', refs.new_dirty_key)
 
-        instance:reset('age')
+        active:reset('age')
 
-        assert.are.equal(5000, instance.get_key_timeout)
-        assert.are.equal('garbage', instance.new_dirty_key)
+        assert.are.equal(5000, active.get_key_timeout)
+        assert.is_nil(active.new_dirty_key)
       end)
     end)
   end)
