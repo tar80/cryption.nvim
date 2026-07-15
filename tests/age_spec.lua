@@ -1,307 +1,315 @@
-local assert = require('luassert')
-local age = require('cryption.age')
-age.setup()
+  local assert = require('luassert')
+  local age = require('cryption.age')
+  age.setup()
 
-describe('age', function()
-  describe('.detect_encrypt_type()', function()
-    local process_mod = require('cryption.lib.process')
-    local original_sync
+  describe('age', function()
+    describe('.detect_encrypt_type()', function()
+      local process_mod = require('cryption.lib.process')
+      local original_sync
 
-    before_each(function()
-      original_sync = process_mod.sync
-    end)
-
-    after_each(function()
-      rawset(process_mod, 'sync', original_sync)
-    end)
-
-    it('returns nil when inspect command exits with a non-zero code', function()
-      rawset(process_mod, 'sync', function()
-        return { code = 1, stdout = '', stderr = 'error' }
+      before_each(function()
+        original_sync = process_mod.sync
       end)
 
-      local res = age.detect_encrypt_type('/path/to/file.age', 'age-keygen')
-
-      assert.is_nil(res)
-    end)
-
-    it('returns nil when stdout is empty', function()
-      rawset(process_mod, 'sync', function()
-        return { code = 0, stdout = '', stderr = '' }
+      after_each(function()
+        rawset(process_mod, 'sync', original_sync)
       end)
 
-      local res = age.detect_encrypt_type('/path/to/file.age', 'age-keygen')
+      it('returns nil when inspect command exits with a non-zero code', function()
+        rawset(process_mod, 'sync', function()
+          return { code = 1, stdout = '', stderr = 'error' }
+        end)
 
-      assert.is_nil(res)
-    end)
+        local res = age.detect_encrypt_type('/path/to/file.age', 'age-keygen')
 
-    it('returns nil when stdout is not valid JSON', function()
-      rawset(process_mod, 'sync', function()
-        return { code = 0, stdout = 'not json', stderr = '' }
+        assert.is_nil(res)
       end)
 
-      local res = age.detect_encrypt_type('/path/to/file.age', 'age-keygen')
+      it('returns nil when stdout is empty', function()
+        rawset(process_mod, 'sync', function()
+          return { code = 0, stdout = '', stderr = '' }
+        end)
 
-      assert.is_nil(res)
-    end)
+        local res = age.detect_encrypt_type('/path/to/file.age', 'age-keygen')
 
-    it('returns nil when JSON does not contain version field', function()
-      rawset(process_mod, 'sync', function()
-        return { code = 0, stdout = '{"stanza_types":["X25519"]}', stderr = '' }
+        assert.is_nil(res)
       end)
 
-      local res = age.detect_encrypt_type('/path/to/file.age', 'age-keygen')
+      it('returns nil when stdout is not valid JSON', function()
+        rawset(process_mod, 'sync', function()
+          return { code = 0, stdout = 'not json', stderr = '' }
+        end)
 
-      assert.is_nil(res)
-    end)
+        local res = age.detect_encrypt_type('/path/to/file.age', 'age-keygen')
 
-    it('returns "scrypt" when stanza_types contains "scrypt"', function()
-      rawset(process_mod, 'sync', function()
-        return {
-          code = 0,
-          stdout = '{"version":"v1","stanza_types":["scrypt"]}',
-          stderr = '',
-        }
+        assert.is_nil(res)
       end)
 
-      local res = age.detect_encrypt_type('/path/to/file.age', 'age-keygen')
+      it('returns nil when JSON does not contain version field', function()
+        rawset(process_mod, 'sync', function()
+          return { code = 0, stdout = '{"stanza_types":["X25519"]}', stderr = '' }
+        end)
 
-      assert.are.equal('scrypt', res)
-    end)
+        local res = age.detect_encrypt_type('/path/to/file.age', 'age-keygen')
 
-    it('returns "key" when stanza_types does not contain "scrypt"', function()
-      rawset(process_mod, 'sync', function()
-        return {
-          code = 0,
-          stdout = '{"version":"v1","stanza_types":["X25519"]}',
-          stderr = '',
-        }
+        assert.is_nil(res)
       end)
 
-      local res = age.detect_encrypt_type('/path/to/file.age', 'age-keygen')
+      it('returns "scrypt" when stanza_types contains "scrypt"', function()
+        rawset(process_mod, 'sync', function()
+          return {
+            code = 0,
+            stdout = '{"version":"v1","stanza_types":["scrypt"]}',
+            stderr = '',
+          }
+        end)
 
-      assert.are.equal('key', res)
-    end)
-  end)
+        local res = age.detect_encrypt_type('/path/to/file.age', 'age-keygen')
 
-  describe('.get_secret_key()', function()
-    local process_mod = require('cryption.lib.process')
-    local original_sync
-    local original_inputsecret
-
-    before_each(function()
-      original_sync = process_mod.sync
-      original_inputsecret = vim.fn.inputsecret
-    end)
-
-    after_each(function()
-      rawset(process_mod, 'sync', original_sync)
-      vim.fn.inputsecret = original_inputsecret
-    end)
-
-    it('returns the string as-is when get_key_cmd is a non-empty string', function()
-      local ok, res = age.get_secret_key({ get_key_cmd = 'AGE-SECRET-KEY-...' })
-
-      assert.is_true(ok)
-      assert.are.equal('AGE-SECRET-KEY-...', res)
-    end)
-
-    it('returns false when get_key_cmd is neither a string nor a table', function()
-      local ok, res = age.get_secret_key({ get_key_cmd = nil })
-
-      assert.is_false(ok)
-      assert.are.equal('Cannot get the secret key.', res)
-    end)
-
-    it('returns trimmed stdout when get_key_cmd is a table and the command succeeds', function()
-      vim.fn.inputsecret = function()
-        return 'master_password'
-      end
-
-      rawset(process_mod, 'sync', function(cmd, opts)
-        assert.are.same({ 'get-key-cmd' }, cmd)
-        assert.are.equal('master_password', opts.stdin)
-        return { code = 0, stdout = 'AGE-SECRET-KEY-...\n', stderr = '' }
+        assert.are.equal('scrypt', res)
       end)
 
-      local ok, res = age.get_secret_key({ get_key_cmd = { 'get-key-cmd' } })
+      it('returns "key" when stanza_types does not contain "scrypt"', function()
+        rawset(process_mod, 'sync', function()
+          return {
+            code = 0,
+            stdout = '{"version":"v1","stanza_types":["X25519"]}',
+            stderr = '',
+          }
+        end)
 
-      assert.is_true(ok)
-      assert.are.equal('AGE-SECRET-KEY-...', res)
-    end)
+        local res = age.detect_encrypt_type('/path/to/file.age', 'age-keygen')
 
-    it('returns false when get_key_cmd is a table and the command fails', function()
-      vim.fn.inputsecret = function()
-        return 'wrong_password'
-      end
-
-      rawset(process_mod, 'sync', function()
-        return { code = 1, stdout = '', stderr = 'auth failed' }
-      end)
-
-      local ok, res = age.get_secret_key({ get_key_cmd = { 'get-key-cmd' } })
-
-      assert.is_false(ok)
-      assert.are.equal('Failed to get the secret key.', res)
-    end)
-  end)
-
-  describe('.parse_encrypt()', function()
-    local original_shellescape
-
-    before_each(function()
-      original_shellescape = vim.fn.shellescape
-    end)
-
-    after_each(function()
-      vim.fn.shellescape = original_shellescape
-    end)
-
-    it('builds a passphrase encrypt command with shellescape applied to filepath', function()
-      vim.fn.shellescape = function(s)
-        return ("'%s'"):format(s)
-      end
-
-      local res = age.parse_encrypt('age', 'passphrase', '/path/to/file.age', {})
-
-      assert.are.same({
-        '!age',
-        '--encrypt',
-        '--passphrase',
-        '-o',
-        "'/path/to/file.age'",
-      }, res)
-    end)
-
-    it('builds a passphrase encrypt command with --armor when armor is true', function()
-      vim.fn.shellescape = function(s)
-        return ("'%s'"):format(s)
-      end
-
-      local res = age.parse_encrypt('age', 'passphrase', '/path/to/file.age', { armor = true })
-
-      assert.are.same({
-        '!age',
-        '--encrypt',
-        '--passphrase',
-        '--armor',
-        '-o',
-        "'/path/to/file.age'",
-      }, res)
-    end)
-
-    it('builds a key_file encrypt command', function()
-      local res = age.parse_encrypt('age', 'key_file', '/path/to/file.age', {
-        key_file = '/path/to/recipients.txt',
-      })
-
-      assert.are.same({
-        'age',
-        '--encrypt',
-        '--recipients-file',
-        '/path/to/recipients.txt',
-        '-o',
-        '/path/to/file.age',
-      }, res)
-    end)
-
-    it('builds a public_key encrypt command', function()
-      local res = age.parse_encrypt('age', 'public_key', '/path/to/file.age', {
-        public_key = 'age1...key',
-      })
-
-      assert.are.same({
-        'age',
-        '--encrypt',
-        '--recipient',
-        'age1...key',
-        '-o',
-        '/path/to/file.age',
-      }, res)
-    end)
-
-    it('raises an error when an invalid keytype is given', function()
-      assert.has_error(function()
-        age.parse_encrypt('age', 'invalid', '/path/to/file.age', {})
+        assert.are.equal('key', res)
       end)
     end)
-  end)
 
-  describe('.stdin_decrypt()', function()
-    local process_mod = require('cryption.lib.process')
-    local util_mod = require('cryption.util')
-    local filesystem_mod = require('cryption.lib.filesystem')
-    local info_mod = require('cryption.info')
+    describe('.get_secret_key()', function()
+      local process_mod = require('cryption.lib.process')
+      local original_sync
+      local original_inputsecret
 
-    local original_sync
-    local original_create_scratch
-    local original_is_file
-    local original_echo
-    local original_inputsecret
-    local original_buffer_cmd
-    local scratch_bufnr
-
-    before_each(function()
-      scratch_bufnr = vim.api.nvim_create_buf(true, true)
-      original_sync = process_mod.sync
-      original_create_scratch = util_mod.create_scratch_contents
-      original_is_file = filesystem_mod.is_file
-      original_echo = info_mod.echo
-      original_inputsecret = vim.fn.inputsecret
-      original_buffer_cmd = vim.cmd.buffer
-      rawset(info_mod, 'echo', function() end)
-      rawset(util_mod, 'create_scratch_contents', function()
-        return scratch_bufnr
+      before_each(function()
+        original_sync = process_mod.sync
+        original_inputsecret = vim.fn.inputsecret
       end)
-      vim.cmd.buffer = function() end
+
+      after_each(function()
+        rawset(process_mod, 'sync', original_sync)
+        vim.fn.inputsecret = original_inputsecret
+      end)
+
+      it('returns the string as-is when get_key_cmd is a non-empty string', function()
+        local ok, res = age.get_secret_key({ get_key_cmd = 'AGE-SECRET-KEY-...' })
+
+        assert.is_true(ok)
+        assert.are.equal('AGE-SECRET-KEY-...', res)
+      end)
+
+      it('returns false when get_key_cmd is neither a string nor a table', function()
+        local ok, res = age.get_secret_key({ get_key_cmd = nil })
+
+        assert.is_false(ok)
+        assert.are.equal('Cannot get the secret key.', res)
+      end)
+
+      it('returns trimmed stdout when get_key_cmd is a table and the command succeeds', function()
+        ---@diagnostic disable-next-line: duplicate-set-field
+        vim.fn.inputsecret = function()
+          return 'master_password'
+        end
+
+        rawset(process_mod, 'sync', function(cmd, opts)
+          assert.are.same({ 'get-key-cmd' }, cmd)
+          assert.are.equal('master_password', opts.stdin)
+          return { code = 0, stdout = 'AGE-SECRET-KEY-...\n', stderr = '' }
+        end)
+
+        local ok, res = age.get_secret_key({ get_key_cmd = { 'get-key-cmd' } })
+
+        assert.is_true(ok)
+        assert.are.equal('AGE-SECRET-KEY-...', res)
+      end)
+
+      it('returns false when get_key_cmd is a table and the command fails', function()
+        ---@diagnostic disable-next-line: duplicate-set-field
+        vim.fn.inputsecret = function()
+          return 'wrong_password'
+        end
+
+        rawset(process_mod, 'sync', function()
+          return { code = 1, stdout = '', stderr = 'auth failed' }
+        end)
+
+        local ok, res = age.get_secret_key({ get_key_cmd = { 'get-key-cmd' } })
+
+        assert.is_false(ok)
+        assert.are.equal('Failed to get the secret key.', res)
+      end)
     end)
 
-    after_each(function()
-      rawset(process_mod, 'sync', original_sync)
-      rawset(util_mod, 'create_scratch_contents', original_create_scratch)
-      rawset(filesystem_mod, 'is_file', original_is_file)
-      rawset(info_mod, 'echo', original_echo)
-      vim.fn.inputsecret = original_inputsecret
-      vim.cmd.buffer = original_buffer_cmd
-      if vim.api.nvim_buf_is_valid(scratch_bufnr) then
-        vim.api.nvim_buf_delete(scratch_bufnr, { force = true })
-      end
+    describe('.parse_encrypt()', function()
+      local original_shellescape
+
+      before_each(function()
+        original_shellescape = vim.fn.shellescape
+      end)
+
+      after_each(function()
+        vim.fn.shellescape = original_shellescape
+      end)
+
+      it('builds a passphrase encrypt command with shellescape applied to filepath', function()
+        ---@diagnostic disable-next-line: duplicate-set-field
+        vim.fn.shellescape = function(s)
+          return ("'%s'"):format(s)
+        end
+
+        local res = age.parse_encrypt('age', 'passphrase', '/path/to/file.age', {})
+
+        assert.are.same({
+          '!age',
+          '--encrypt',
+          '--passphrase',
+          '-o',
+          "'/path/to/file.age'",
+        }, res)
+      end)
+
+      it('builds a passphrase encrypt command with --armor when armor is true', function()
+        ---@diagnostic disable-next-line: duplicate-set-field
+        vim.fn.shellescape = function(s)
+          return ("'%s'"):format(s)
+        end
+
+        local res = age.parse_encrypt('age', 'passphrase', '/path/to/file.age', { armor = true })
+
+        assert.are.same({
+          '!age',
+          '--encrypt',
+          '--passphrase',
+          '--armor',
+          '-o',
+          "'/path/to/file.age'",
+        }, res)
+      end)
+
+      it('builds a key_file encrypt command', function()
+        local res = age.parse_encrypt('age', 'key_file', '/path/to/file.age', {
+          key_file = '/path/to/recipients.txt',
+        })
+
+        assert.are.same({
+          'age',
+          '--encrypt',
+          '--recipients-file',
+          '/path/to/recipients.txt',
+          '-o',
+          '/path/to/file.age',
+        }, res)
+      end)
+
+      it('builds a public_key encrypt command', function()
+        local res = age.parse_encrypt('age', 'public_key', '/path/to/file.age', {
+          public_key = 'age1...key',
+        })
+
+        assert.are.same({
+          'age',
+          '--encrypt',
+          '--recipient',
+          'age1...key',
+          '-o',
+          '/path/to/file.age',
+        }, res)
+      end)
+
+      it('raises an error when an invalid keytype is given', function()
+        assert.has_error(function()
+          ---@diagnostic disable-next-line: param-type-mismatch
+          age.parse_encrypt('age', 'invalid', '/path/to/file.age', {})
+        end)
+      end)
     end)
 
-    it('sets age_crypt_pubkey to nil and warns when keygen returns empty string', function()
-      local warned = false
-      rawset(info_mod, 'echo', function(_, msg, level)
-        if level == 'WARN' then
-          warned = true
+    describe('.stdin_decrypt()', function()
+      local process_mod = require('cryption.lib.process')
+      local util_mod = require('cryption.util')
+      local filesystem_mod = require('cryption.lib.filesystem')
+      local info_mod = require('cryption.info')
+
+      local original_sync
+      local original_create_scratch
+      local original_is_file
+      local original_echo
+      local original_inputsecret
+      local original_buffer_cmd
+      local scratch_bufnr
+
+      before_each(function()
+        scratch_bufnr = vim.api.nvim_create_buf(true, true)
+        original_sync = process_mod.sync
+        original_create_scratch = util_mod.create_scratch_contents
+        original_is_file = filesystem_mod.is_file
+        original_echo = info_mod.echo
+        original_inputsecret = vim.fn.inputsecret
+        original_buffer_cmd = vim.cmd.buffer
+        rawset(info_mod, 'echo', function() end)
+        rawset(util_mod, 'create_scratch_contents', function()
+          return scratch_bufnr
+        end)
+        ---@diagnostic disable-next-line: duplicate-set-field
+        vim.cmd.buffer = function() end
+      end)
+
+      after_each(function()
+        rawset(process_mod, 'sync', original_sync)
+        rawset(util_mod, 'create_scratch_contents', original_create_scratch)
+        rawset(filesystem_mod, 'is_file', original_is_file)
+        rawset(info_mod, 'echo', original_echo)
+        vim.fn.inputsecret = original_inputsecret
+        vim.cmd.buffer = original_buffer_cmd
+        if vim.api.nvim_buf_is_valid(scratch_bufnr) then
+          vim.api.nvim_buf_delete(scratch_bufnr, { force = true })
         end
       end)
 
-      rawset(process_mod, 'sync', function(cmd)
-        if vim.tbl_contains(cmd, '-y') then
-          return { code = 0, stdout = '\n', stderr = '' }
-        end
-        return { code = 0, stdout = 'decrypted_content', stderr = '' }
+      it('sets age_crypt_pubkey to nil and warns when keygen returns empty string', function()
+        local warned = false
+        rawset(info_mod, 'echo', function(_, _, level)
+          if level == 'WARN' then
+            warned = true
+          end
+        end)
+
+        rawset(process_mod, 'sync', function(cmd)
+          if vim.tbl_contains(cmd, '-y') then
+            return { code = 0, stdout = '\n', stderr = '' }
+          end
+          return { code = 0, stdout = 'decrypted_content', stderr = '' }
+        end)
+
+        local source = { bufnr = 1, filepath = '/path/to/secret.age', filetype = 'yaml' }
+        local ok, bufnr = age.stdin_decrypt(
+          source,
+          ---@diagnostic disable-next-line: missing-fields
+          { age = 'age', keygen = 'age-keygen' },
+          { get_key_cmd = 'AGE-SECRET-KEY-...' }
+        )
+
+        assert.is_true(ok)
+        assert.are.equal(scratch_bufnr, bufnr)
+        assert.is_nil(vim.b[scratch_bufnr].age_crypt_pubkey)
+        assert.is_true(warned)
       end)
 
-      local source = { bufnr = 1, filepath = '/path/to/secret.age', filetype = 'yaml' }
-      local ok, bufnr = age.stdin_decrypt(
-        source,
-        { age = 'age', keygen = 'age-keygen' },
-        { get_key_cmd = 'AGE-SECRET-KEY-...' }
-      )
+      it('returns false when key_file is specified but does not exist', function()
+        rawset(filesystem_mod, 'is_file', function()
+          return false
+        end)
 
-      assert.is_true(ok)
-      assert.are.equal(scratch_bufnr, bufnr)
-      assert.is_nil(vim.b[scratch_bufnr].age_crypt_pubkey)
-      assert.is_true(warned)
-    end)
-
-    it('returns false when key_file is specified but does not exist', function()
-      rawset(filesystem_mod, 'is_file', function()
-        return false
-      end)
-
-      local source = { bufnr = 1, filepath = '/path/to/secret.age', filetype = 'yaml' }
+        local source = { bufnr = 1, filepath = '/path/to/secret.age', filetype = 'yaml' }
+        ---@diagnostic disable-next-line: missing-fields
       local ok, bufnr, err = age.stdin_decrypt(source, { age = 'age', keygen = 'age-keygen' }, {
         key_file = '/path/to/missing.txt',
       })
@@ -313,6 +321,7 @@ describe('age', function()
 
     it('returns false when get_secret_key fails', function()
       local source = { bufnr = 1, filepath = '/path/to/secret.age', filetype = 'yaml' }
+      ---@diagnostic disable-next-line: missing-fields
       local ok, bufnr, err = age.stdin_decrypt(source, { age = 'age', keygen = 'age-keygen' }, { get_key_cmd = nil })
 
       assert.is_false(ok)
@@ -328,6 +337,7 @@ describe('age', function()
       local source = { bufnr = 1, filepath = '/path/to/secret.age', filetype = 'yaml' }
       local ok, bufnr, err = age.stdin_decrypt(
         source,
+        ---@diagnostic disable-next-line: missing-fields
         { age = 'age', keygen = 'age-keygen' },
         { get_key_cmd = 'AGE-SECRET-KEY-...' }
       )
@@ -352,6 +362,7 @@ describe('age', function()
       end)
 
       local source = { bufnr = 1, filepath = '/path/to/secret.age', filetype = 'yaml' }
+      ---@diagnostic disable-next-line: missing-fields
       local ok, bufnr = age.stdin_decrypt(source, { age = 'age', keygen = 'age-keygen' }, {
         key_file = '/path/to/key.txt',
       })
@@ -373,6 +384,7 @@ describe('age', function()
       local source = { bufnr = 1, filepath = '/path/to/secret.age', filetype = 'yaml' }
       local ok, bufnr = age.stdin_decrypt(
         source,
+        ---@diagnostic disable-next-line: missing-fields
         { age = 'age', keygen = 'age-keygen' },
         { get_key_cmd = 'AGE-SECRET-KEY-...' }
       )
@@ -413,6 +425,7 @@ describe('age', function()
       rawset(util_mod, 'create_scratch_contents', function()
         return scratch_bufnr
       end)
+      ---@diagnostic disable-next-line: duplicate-set-field
       vim.cmd.buffer = function() end
     end)
 
