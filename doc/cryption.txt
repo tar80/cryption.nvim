@@ -18,6 +18,9 @@ INTRODUCTION                                             *cryption-introduction*
 Decrypted content is opened in a scratch buffer. On save, the source
 file is automatically re-encrypted and overwritten.
 
+cryption                                                              *cryption*
+
+
 ==============================================================================
 SETUP                                                           *cryption-setup*
 
@@ -86,7 +89,6 @@ cryption.age_decrypt({filepath?}, {close_source}, {opts})
 
     Usage: ~
 >lua
-        >
         local cryption = require('cryption')
 
         ## Direct secret key
@@ -187,7 +189,6 @@ cryption.sops_extract({filepath}, {key_spec}, {opts?})
 
     Usage: ~
 >lua
-        >
         local cryption = require('cryption')
         local value = cryption.sops_extract('secrets.yaml', { 'path/to/secrets', 'SOME_API_KEY' })
         if value then
@@ -217,7 +218,6 @@ cryption.sops_exec_env_wrap({filepath}, {opts}, {term_fn}, {fn_args})
 
     Usage: ~
 >lua
-        >
         local cryption = require('cryption')
 
         local function open_terminal(cmd)
@@ -233,7 +233,5 @@ cryption.sops_exec_env_wrap({filepath}, {opts}, {term_fn}, {fn_args})
         )
 <
 
-
-------------------------------------------------------------------------------
 
 vim:tw=78:ts=8:noet:ft=help:norl:

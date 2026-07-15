@@ -16,6 +16,7 @@
 ---file is automatically re-encrypted and overwritten.
 ---@brief ]]
 
+---@class cryption
 local cryption = {}
 
 ---@mod cryption-setup SETUP
@@ -66,7 +67,6 @@ function cryption.age_encrypt(filepath, opts) end
 ---@param close_source boolean Whether to close the source buffer after decryption.
 ---@param opts AgeDecryptOptions
 ---@usage [[
---->
 ---local cryption = require('cryption')
 ---
 ---## Direct secret key
@@ -154,7 +154,6 @@ function cryption.sops_decrypt(filepath, close_source, opts) end
 ---@param opts? SopsGetKeyOptions Retrieval options.
 ---@return string|nil _ The decrypted value, or `nil` if failed.
 ---@usage [[
---->
 ---local cryption = require('cryption')
 ---local value = cryption.sops_extract('secrets.yaml', { 'path/to/secrets', 'SOME_API_KEY' })
 ---if value then
@@ -177,7 +176,6 @@ function cryption.sops_extract(filepath, key_spec, opts) end
 ---@param term_fn function Function to call with environment variables injected.
 ---@param fn_args any[] Arguments unpacked and passed to `term_fn`.
 ---@usage [[
---->
 ---local cryption = require('cryption')
 ---
 ---local function open_terminal(cmd)
@@ -194,6 +192,5 @@ function cryption.sops_extract(filepath, key_spec, opts) end
 ---@usage ]]
 function cryption.sops_exec_env_wrap(filepath, opts, term_fn, fn_args) end
 
----@divider -
 ---@export cryption
 return cryption

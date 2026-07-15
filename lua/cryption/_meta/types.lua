@@ -14,7 +14,7 @@
 
 ---Centralized configuration management for the plugin.
 ---@class Config
----@field setup fun(user_spec?: Schemas?) # Validates and merges user-defined options with the schema state.
+---@field setup fun(user_spec?: {age?:AgeConfig, sops?:SopsConfig}?) # Validates and merges user-defined options with the schema state.
 ---@field get fun(mod_name: Modules, mod_config?: table|boolean): table # Resolves, validates, verifies executable paths, and returns an active configuration instance.
 ---@field get_invalid_keys fun(): string[] | nil # Retrieves a list of unknown or invalid configuration keys detected during setup.
 
@@ -29,17 +29,10 @@
 ---| 'SopsSchema'
 
 ---Configuration schema definition for the Age backend instance.
----@class AgeSchema : CommonMethods
----@field enable boolean # Whether the Age encryption module is enabled.
----@field age string # Resolved executable path or command for age. Default: `'age'`.
----@field keygen string # Resolved executable path or command for age-keygen. Default: `'age-keygen'`.
----@field inspect string # Resolved executable path or command for age-inspect. Default: `'age-inspect'`.
+---@class AgeSchema : AgeConfig, CommonMethods
 
 ---Configuration schema definition for the SOPS backend instance.
----@class SopsSchema : CommonMethods
----@field enable boolean # Whether the SOPS encryption module is enabled.
----@field sops string # Resolved executable path or command for sops. Default: `'sops'`.
----@field encrypt_default_output_type string # Default target file format when encrypting new files. Default: `'yaml'`.
+---@class SopsSchema : SopsConfig, CommonMethods
 
 ---Shared utility methods injected into every resolved configuration instance.
 ---@class CommonMethods
